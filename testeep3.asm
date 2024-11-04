@@ -1,6 +1,6 @@
 .data
 array:  .word 1, 2, 3, 4, 5,                           # Exemplo de array de entrada
-n:      .word 2                                     # Parâmetro (número de elementos por linha)
+n:      .word 3                                     # Parâmetro (número de elementos por linha)
 size:   .word 5                                     # Tamanho do array de entrada
 output: .space 400                                  # Reservar espaço para a matriz
 prompt: .asciiz "Matriz final:\n"                   # Mensagem de prompt
