@@ -11,6 +11,7 @@
 	interArray: .asciiz "Intermediate array:\n"
 	interArraySorted: .asciiz "Sorted intermediate array:\n"
 	ytest: .asciiz "Y-TEST:"
+	separation: .asciiz "///////////////////////////////////////////////////////////////////////////\n"
 .text
 main:
 	addi $k0, $0, 3		# $k0 será o k
@@ -69,6 +70,10 @@ loopXtrain:
 	
 	blt $t5, $t1, loopXtrain
 	
+	la $a0, separation
+	addi $v0, $0, 4
+	syscall
+	
 	# Verifica array intermediário
 	la $a0, interArray
 	addi $v0, $0, 4
@@ -94,6 +99,10 @@ loopXtrain:
 	mul $t8, $t4, 16
 	sub $t8, $s4, $t8
 	jal loopCheckIntermediate
+	
+	la $a0, separation
+	addi $v0, $0, 4
+	syscall
 	
 	
 	# Verifica os indices dos k menores, faz a média de tais indices do ytrain e coloca no ytest
