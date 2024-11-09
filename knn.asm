@@ -3,8 +3,8 @@
 # As entradas assumem w = 3 e h = 1
 
 .data
-	xtrain: .double 4.99, 5.67, 9.134, 7.567, 8.547, 9.88, 4.99, 5.67, 9.134
-	xtest: .double 4.99, 5.67, 9.134, 5.67, 9.134, 7.567, 9.134, 7.567, 8.547, 7.567, 8.547, 9.88, 8.547, 9.88, 10.00, 9.88, 10.00, 10.768, 10.00, 10.768, 11.4356
+	xtrain: .double 4.99, 5.67, 9.134, 7.567, 8.547, 9.88, 5.32, 6.12, 9.44
+	xtest: .double 4.99, 5.67, 9.134, 5.67, 9.134, 7.567, 9.134, 7.567, 8.547, 7.567, 8.547, 9.88, 8.547, 9.88, 5.32, 9.88, 5.32, 6.12, 5.32, 6.12, 9.44
 	ytrain: .double 7.567, 8.547, 9.88, 10.00, 10.768, 11.4356
 	newline: .asciiz "\n"
 	space: .asciiz " "
@@ -12,8 +12,8 @@
 	interArraySorted: .asciiz "Sorted intermediate array:\n"
 .text
 main:
-	addi $s0, $0, 3		# $s0 será o k
-	addi $s6, $0, 3		# $s6 será o m
+	addi $k0, $0, 3		# $k0 será o k
+	addi $k1, $0, 3		# $k1 será o m
 	la $s1, xtrain
 	la $s2, xtest
 	la $s3, ytrain
@@ -22,11 +22,11 @@ main:
 	addi $t0, $0, 21	# tamanho de xtest
 	addi $t1, $0, 9		# tamanho de xtrain
 	addi $t2, $0, 6		# tamanho de ytrain
-	addi $t3, $0, 7		# tamanho de ytest (xtest / 3)
+	addi $t3, $0, 7		# tamanho de ytest (xtest / m)
 
 	# ALOCA ARRAY INT. E YTEST
-	subi $sp, $sp, 7	# $sp precisa ser divisivel por 8
-	div $t4, $t1, $s6
+	jal adjustsp
+	div $t4, $t1, $k1
 	mul $t4, $t4, 16	# o tamanho do array a ser alocado precisa ser do tamanho xtrain/m * 16, seria 12 mas é preciso ser divisivel por 8
 	add $s4, $s0, $sp	# $s4 será o array intermediário, de tamanho $t4
 	sub $sp, $sp, $t4
@@ -47,7 +47,7 @@ loopXtest:
 loopXtrain:
 
 	# parâmetros para pegaDistVetor
-	add $a2, $0, $s6 	# recupera m para processar os vetores
+	add $a2, $0, $k1	# recupera m para processar os vetores
 	add $v0, $0, $0
 	add $a0, $t6, $0
 	add $a1, $s2, $0
@@ -82,7 +82,7 @@ loopXtrain:
 	li $v0, 4
 	syscall
 	
-	# Verifica array intermediário
+	# Verifica array intermediário ordenado
 	la $a0, interArraySorted
 	addi $v0, $0, 4
 	syscall
@@ -90,6 +90,13 @@ loopXtrain:
 	mul $t8, $t4, 16
 	sub $t8, $s4, $t8
 	jal loopCheckIntermediate
+	
+	
+	# Verifica os indices dos k menores, faz a média de tais indices do ytrain e coloca no ytest
+	add $a0, $0, $s3
+	add $a1, $0, $s4
+	add $a2, $0, $s0
+	
 	
 	j end	
 	
@@ -132,7 +139,13 @@ loopCheckIntermediate:
 	
 	bgt $a1, $t8, loopCheckIntermediate
 	
-	jr $ra				
+	jr $ra
+	
+# $a0 = ytrain
+# $a1 = intermediário
+# $a2 = 				
+getYtrainAvg:
+												
 
 				
 # ALGORITMO DE ORDENAMENTO PARA ARR INTERMEDIÁRIO														
@@ -140,8 +153,7 @@ loopCheckIntermediate:
 # Entrada: 
 #   $a1 - endereço inicial do array no stack ($sp + offset inicial)
 #   $a2 - tamanho do array (número de elementos)
-# Saída:
-#   Array ordenado em ordem crescente com base no valor double (8 primeiros bytes)
+
 bubble_sort:
     addi $t5, $zero, 0      # i = 0 (índice externo)
 outer_loop:
@@ -187,8 +199,14 @@ skip_swap:
 end_outer:
     jr $ra                  # Retorna para o chamador
 
-		
-				
+
+# ajusta $sp para ser divisivel por 8
+adjustsp:	
+	add $t4, $0, 8			
+	div $sp, $t4
+	mfhi $t7
+	sub $sp, $sp, $t7
+	jr $ra
 						
 										
 			
