@@ -48,21 +48,22 @@ loopXtrain:
 
 	# parâmetros para pegaDistVetor
 	add $a2, $0, $k1	# recupera m para processar os vetores
-	add $v0, $0, $0
 	add $a0, $t6, $0
 	add $a1, $s2, $0
-	sub.d $f30, $f30, $f30
+	mtc1 $0, $f30		# reseta double em $f30
+	mtc1 $0, $f31
 	jal pegaDistVetor
 	
 	# coloca o valor calculado e indice no intermediário
 	s.d $f30, ($t8)
 	subi $t8, $t8, 8
-	sw $t5, ($t8)
+	div $s6, $t5, $k1
+	sw $s6, ($t8)
 	subi $t8, $t8, 8			
 	
-	
-	addi $t6, $t6, 24
-	addi $t5, $t5, 3
+	mul $s0, $k1, 8
+	add $t6, $t6, $s0
+	add $t5, $t5, $k1
 	
 	blt $t5, $t1, loopXtrain
 	
@@ -95,7 +96,9 @@ loopXtrain:
 	# Verifica os indices dos k menores, faz a média de tais indices do ytrain e coloca no ytest
 	add $a0, $0, $s3
 	add $a1, $0, $s4
-	add $a2, $0, $s0
+	add $a2, $0, $k0
+	mtc1 $0, $f30
+	mtc1 $0, $f31
 	
 	
 	j end	
@@ -143,10 +146,18 @@ loopCheckIntermediate:
 	
 # $a0 = ytrain
 # $a1 = intermediário
-# $a2 = 				
+# $a2 = k				
 getYtrainAvg:
-												
-
+	lw $s0, 8($a1)
+	mul $s0, $t0, 8											
+	add $a0, $a0, $s0
+	l.d $f0, ($a0)
+	add.d $f30, $f30, $f0
+	subi $a2, $a2, 1
+	addi $a1, $a1, 16
+	bgt $a2, $0, getYtrainAvg
+	
+	jr $ra
 				
 # ALGORITMO DE ORDENAMENTO PARA ARR INTERMEDIÁRIO														
 # Função: bubble_sort
