@@ -9,7 +9,7 @@
 	newline: .asciiz "\n"
 	space: .asciiz " "
 	interArray: .asciiz "Intermediate array:\n"
-
+	interArraySorted: .asciiz "Sorted intermediate array:\n"
 .text
 main:
 	addi $s0, $0, 3		# $s0 será o k
@@ -25,8 +25,9 @@ main:
 	addi $t3, $0, 7		# tamanho de ytest (xtest / 3)
 
 	# ALOCA ARRAY INT. E YTEST
-	subi $sp, $sp, 7	
-	mul $t4, $t1, 16	# o tamanho do array a ser alocado precisa ser do tamanho xtrain * 16, seria 12 mas é preciso ser divisivel por 8
+	subi $sp, $sp, 7	# $sp precisa ser divisivel por 8
+	div $t4, $t1, $s6
+	mul $t4, $t4, 16	# o tamanho do array a ser alocado precisa ser do tamanho xtrain/m * 16, seria 12 mas é preciso ser divisivel por 8
 	add $s4, $s0, $sp	# $s4 será o array intermediário, de tamanho $t4
 	sub $sp, $sp, $t4
 	div $t4, $t4, 16
@@ -50,6 +51,7 @@ loopXtrain:
 	add $v0, $0, $0
 	add $a0, $t6, $0
 	add $a1, $s2, $0
+	sub.d $f30, $f30, $f30
 	jal pegaDistVetor
 	
 	# coloca o valor calculado e indice no intermediário
@@ -59,8 +61,8 @@ loopXtrain:
 	subi $t8, $t8, 8			
 	
 	
-	addi $t6, $t6, 8
-	addi $t5, $t5, 1
+	addi $t6, $t6, 24
+	addi $t5, $t5, 3
 	
 	blt $t5, $t1, loopXtrain
 	
@@ -72,8 +74,22 @@ loopXtrain:
 	jal loopCheckIntermediate
 	
 	# Ordena array intermediário
+	add $a1, $0, $s4
+	add $a2, $0, $t4
+	jal bubble_sort
 	
+	la $a0, newline
+	li $v0, 4
+	syscall
 	
+	# Verifica array intermediário
+	la $a0, interArraySorted
+	addi $v0, $0, 4
+	syscall
+	add $a1, $0, $s4
+	mul $t8, $t4, 16
+	sub $t8, $s4, $t8
+	jal loopCheckIntermediate
 	
 	j end	
 	
@@ -117,36 +133,61 @@ loopCheckIntermediate:
 	bgt $a1, $t8, loopCheckIntermediate
 	
 	jr $ra				
-					
+
+				
+# ALGORITMO DE ORDENAMENTO PARA ARR INTERMEDIÁRIO														
+bubble_sort:
+    addi $t5, $zero, 0      # i = 0 (índice externo)
+outer_loop:
+    add $t8, $zero, $a2     # t8 = tamanho do array
+    sub $t8, $t8, $t5       # t8 = tamanho - i - 1
+    addi $t8, $t8, -1       # t8 = tamanho - i - 2
+    blez $t8, end_outer     # Se t8 <= 0, terminar loop externo
+
+    move $t9, $zero         # j = 0 (índice interno)
+inner_loop:
+    mul $s7, $t9, 16        # Offset = j * 16 (cada elemento ocupa 16 bytes)
+    sub $t6, $a1, $s7       # Endereço do elemento[j] (posição atual)
+    
+    ldc1 $f0, 0($t6)        # Carregar o double dos primeiros 8 bytes de array[j] em $f0
+    ldc1 $f2, -16($t6)      # Carregar o double dos primeiros 8 bytes de array[j+1] em $f2
+    
+    c.le.d $f2, $f0         # Verificar se array[j+1] < array[j]
+    bc1f skip_swap          # Se falso, não faz swap
+    
+    # Swap completo de 16 bytes entre array[j] e array[j+1]
+    move $t7, $t6           # Salvar endereço de array[j]
+    addi $t6, $t6, -16      # Calcular endereço de array[j+1]
+    
+    # Trocar os primeiros 8 bytes
+    ldc1 $f4, 0($t7)        # Carregar os primeiros 8 bytes de array[j] em $f4
+    ldc1 $f6, 0($t6)        # Carregar os primeiros 8 bytes de array[j+1] em $f6
+    s.d $f6, 0($t7)         # Escrever os primeiros 8 bytes de array[j+1] em array[j]
+    s.d $f4, 0($t6)         # Escrever os primeiros 8 bytes de array[j] em array[j+1]
+    
+    # Trocar os últimos 8 bytes
+    ldc1 $f8, 8($t7)        # Carregar os últimos 8 bytes de array[j] em $f8
+    ldc1 $f10, 8($t6)       # Carregar os últimos 8 bytes de array[j+1] em $f10
+    s.d $f10, 8($t7)        # Escrever os últimos 8 bytes de array[j+1] em array[j]
+    s.d $f8, 8($t6)         # Escrever os últimos 8 bytes de array[j] em array[j+1]
+
+skip_swap:
+    addi $t9, $t9, 1        # j++
+    blt $t9, $t8, inner_loop # Enquanto j < tamanho - i - 2, repetir
+
+    addi $t5, $t5, 1        # i++
+    j outer_loop            # Volta para o loop externo
+
+end_outer:
+    jr $ra                  # Retorna para o chamador
 
 		
-			
 				
-					
 						
-							
-								
-									
 										
-												
-	
-	
-	# TESTE PARA MEXER COM DOUBLE
-	
-	add $t7, $t1, $0
-loop:
-	l.d $f2, ($s1) 
-	l.d $f0, ($s2)
-	add.d $f12, $f0, $f2
-	addi $v0, $zero, 3
-	syscall
-	addi $v0, $zero, 4
-	la $a0, newline
-	syscall
-	subi $t7, $t7, 1
-	addi $s2, $s2, 8
-	addi $s1, $s1, 8
-	bgt $t7, $0, loop
-end:	
-	addi $v0, $zero, 10
-	syscall
+			
+end:
+	addi $v0, $v0, 10
+	syscall			
+					
+					
