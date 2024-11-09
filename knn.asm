@@ -7,6 +7,8 @@
 	xtest: .double 4.99, 5.67, 9.134, 5.67, 9.134, 7.567, 9.134, 7.567, 8.547, 7.567, 8.547, 9.88, 8.547, 9.88, 10.00, 9.88, 10.00, 10.768, 10.00, 10.768, 11.4356
 	ytrain: .double 7.567, 8.547, 9.88, 10.00, 10.768, 11.4356
 	newline: .asciiz "\n"
+	space: .asciiz " "
+	interArray: .asciiz "Intermediate array:\n"
 
 .text
 main:
@@ -22,14 +24,17 @@ main:
 	addi $t2, $0, 6		# tamanho de ytrain
 	addi $t3, $0, 7		# tamanho de ytest (xtest / 3)
 
-	# ALOCA ARRAY INT. E YTEST	
-	mul $t4, $t0, 12	# o tamanho do array a ser alocado precisa ser do tamanho xteste * 12, pois é para double, precisa armazenar o índice, e cada posição tem 4 bytes
-	add $s4, $s0, $sp	# $s4 será o array intermediário
+	# ALOCA ARRAY INT. E YTEST
+	subi $sp, $sp, 7	
+	mul $t4, $t1, 16	# o tamanho do array a ser alocado precisa ser do tamanho xtrain * 16, seria 12 mas é preciso ser divisivel por 8
+	add $s4, $s0, $sp	# $s4 será o array intermediário, de tamanho $t4
 	sub $sp, $sp, $t4
+	div $t4, $t4, 16
 	
 	sll $t7, $t3, 2
-	add $s5, $s0, $sp	# $s5 será o ytest
+	add $s5, $s0, $sp	# $s5 será o ytest, de tamanho $t7
 	sub $sp, $sp, $t7
+	srl $t7, $t7, 2
 	
 	
 	# INICIO DO PROCESSAMENTO
@@ -37,8 +42,8 @@ loopXtest:
 
 	add $t5, $0, $0 	# índice para o loop xtrain
 	add $t6, $0, $s1	# ponteiro auxiliar para loop xtrain
+	add $t8, $0, $s4	# ponteiro auxiliar para array intermediario
 loopXtrain:
-	
 
 	# parâmetros para pegaDistVetor
 	add $a2, $0, $s6 	# recupera m para processar os vetores
@@ -47,19 +52,32 @@ loopXtrain:
 	add $a1, $s2, $0
 	jal pegaDistVetor
 	
-	mov.d $f12, $f30
-	li $v0, 3
-	syscall
-	la $a0, newline
-	li $v0, 4
-	syscall
+	# coloca o valor calculado e indice no intermediário
+	s.d $f30, ($t8)
+	subi $t8, $t8, 8
+	sw $t5, ($t8)
+	subi $t8, $t8, 8			
+	
 	
 	addi $t6, $t6, 8
 	addi $t5, $t5, 1
 	
 	blt $t5, $t1, loopXtrain
 	
-	j end
+	# Verifica array intermediário
+	la $a0, interArray
+	addi $v0, $0, 4
+	syscall
+	add $a1, $0, $s4
+	jal loopCheckIntermediate
+	
+	# Ordena array intermediário
+	
+	
+	
+	j end	
+	
+
 	
 	
 	
@@ -77,10 +95,30 @@ pegaDistVetor:			# pega a distância entre dois vetores $a1 e $a0  de tamanho $a
 	jr $ra
 	
 			
-				
-					
-						
+loopCheckIntermediate:
+	l.d $f12, ($a1)	
+	li $v0, 3
+	syscall
+	subi $a1, $a1, 8
 	
+	la $a0, space
+	li $v0, 4
+	syscall
+	
+	lw $a0, ($a1)
+	li $v0, 1
+	syscall
+	subi $a1, $a1, 8
+	
+	la $a0, newline
+	li $v0, 4
+	syscall
+	
+	bgt $a1, $t8, loopCheckIntermediate
+	
+	jr $ra				
+					
+
 		
 			
 				
