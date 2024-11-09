@@ -3,7 +3,7 @@
 # As entradas assumem w = 3 e h = 1
 
 .data
-	xtrain: .double 4.99, 5.67, 9.134, 7.567, 8.547, 9.88, 10.00, 10.768, 11.4356
+	xtrain: .double 4.99, 5.67, 9.134, 7.567, 8.547, 9.88, 4.99, 5.67, 9.134
 	xtest: .double 4.99, 5.67, 9.134, 5.67, 9.134, 7.567, 9.134, 7.567, 8.547, 7.567, 8.547, 9.88, 8.547, 9.88, 10.00, 9.88, 10.00, 10.768, 10.00, 10.768, 11.4356
 	ytrain: .double 7.567, 8.547, 9.88, 10.00, 10.768, 11.4356
 	newline: .asciiz "\n"
@@ -136,6 +136,12 @@ loopCheckIntermediate:
 
 				
 # ALGORITMO DE ORDENAMENTO PARA ARR INTERMEDIÁRIO														
+# Função: bubble_sort
+# Entrada: 
+#   $a1 - endereço inicial do array no stack ($sp + offset inicial)
+#   $a2 - tamanho do array (número de elementos)
+# Saída:
+#   Array ordenado em ordem crescente com base no valor double (8 primeiros bytes)
 bubble_sort:
     addi $t5, $zero, 0      # i = 0 (índice externo)
 outer_loop:
@@ -149,8 +155,8 @@ inner_loop:
     mul $s7, $t9, 16        # Offset = j * 16 (cada elemento ocupa 16 bytes)
     sub $t6, $a1, $s7       # Endereço do elemento[j] (posição atual)
     
-    ldc1 $f0, 0($t6)        # Carregar o double dos primeiros 8 bytes de array[j] em $f0
-    ldc1 $f2, -16($t6)      # Carregar o double dos primeiros 8 bytes de array[j+1] em $f2
+    ldc1 $f0, 0($t6)        # Carregar os primeiros 8 bytes de array[j] em $f0
+    ldc1 $f2, -16($t6)      # Carregar os primeiros 8 bytes de array[j+1] em $f2
     
     c.le.d $f2, $f0         # Verificar se array[j+1] < array[j]
     bc1f skip_swap          # Se falso, não faz swap
@@ -166,10 +172,10 @@ inner_loop:
     s.d $f4, 0($t6)         # Escrever os primeiros 8 bytes de array[j] em array[j+1]
     
     # Trocar os últimos 8 bytes
-    ldc1 $f8, 8($t7)        # Carregar os últimos 8 bytes de array[j] em $f8
-    ldc1 $f10, 8($t6)       # Carregar os últimos 8 bytes de array[j+1] em $f10
-    s.d $f10, 8($t7)        # Escrever os últimos 8 bytes de array[j+1] em array[j]
-    s.d $f8, 8($t6)         # Escrever os últimos 8 bytes de array[j] em array[j+1]
+    lw $s7, -8($t7)        # Carregar os últimos 8 bytes de array[j] em $f8
+    lw $s6, -8($t6)       # Carregar os últimos 8 bytes de array[j+1] em $f10
+    sw $s6, -8($t7)        # Escrever os últimos 8 bytes de array[j+1] em array[j]
+    sw $s7, -8($t6)         # Escrever os últimos 8 bytes de array[j] em array[j+1]
 
 skip_swap:
     addi $t9, $t9, 1        # j++
