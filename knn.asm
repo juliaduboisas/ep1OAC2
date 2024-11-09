@@ -10,6 +10,7 @@
 	space: .asciiz " "
 	interArray: .asciiz "Intermediate array:\n"
 	interArraySorted: .asciiz "Sorted intermediate array:\n"
+	ytest: .asciiz "Y-TEST:"
 .text
 main:
 	addi $k0, $0, 3		# $k0 será o k
@@ -33,14 +34,15 @@ main:
 	div $t4, $t4, 16
 	
 	sll $t7, $t3, 2
-	add $s5, $s0, $sp	# $s5 será o ytest, de tamanho $t7
+	add $s5, $0, $sp	# $s5 será o ytest
 	sub $sp, $sp, $t7
-	srl $t7, $t7, 2
+	
 	
 	
 	# INICIO DO PROCESSAMENTO
+	add $t7, $0, $s5 	# ponteiro auxiliar para ytest
 loopXtest:
-
+	
 	add $t5, $0, $0 	# índice para o loop xtrain
 	add $t6, $0, $s1	# ponteiro auxiliar para loop xtrain
 	add $t8, $0, $s4	# ponteiro auxiliar para array intermediario
@@ -76,6 +78,7 @@ loopXtrain:
 	
 	# Ordena array intermediário
 	add $a1, $0, $s4
+	
 	add $a2, $0, $t4
 	jal bubble_sort
 	
@@ -99,7 +102,40 @@ loopXtrain:
 	add $a2, $0, $k0
 	mtc1 $0, $f30
 	mtc1 $0, $f31
+	mtc1 $k1, $f2		# coloca m em $f2 para fazer a média
+	mtc1 $0, $f3
+	cvt.d.w $f2, $f2
+	jal getYtrainAvg
+	s.d $f30, ($t7)		# coloca a média calculada em ytest
+	mul $s6, $k1, 8		# deslocamento do xtest = m * 8
+	subi $t7, $t7, 8
+	sub $s2, $s2, $s6
+	sub $t0, $t0, $k1
 	
+	
+	bgt $t0, $0, loopXtest
+	
+	# IMPRIME YTEST
+	la $a0, newline
+	li $v0, 4
+	syscall
+	la $a0, ytest
+	li $v0, 4
+	syscall
+	la $a0, newline
+	li $v0, 4
+	syscall
+	
+loopYtest:
+	l.d $f12, ($s5)
+	addi $v0, $0, 3
+	syscall
+	la $a0, newline
+	li $v0, 4
+	syscall
+	subi $s5, $s5, 8
+	subi $t3, $t3, 1
+	bgt $t3, $0, loopYtest
 	
 	j end	
 	
@@ -148,15 +184,16 @@ loopCheckIntermediate:
 # $a1 = intermediário
 # $a2 = k				
 getYtrainAvg:
-	lw $s0, 8($a1)
-	mul $s0, $t0, 8											
-	add $a0, $a0, $s0
+	lw $s0, -8($a1)		# carrega o indice
+	mul $s0, $s0, 8											
+	add $a0, $a0, $s0	
 	l.d $f0, ($a0)
 	add.d $f30, $f30, $f0
 	subi $a2, $a2, 1
-	addi $a1, $a1, 16
+	subi $a1, $a1, 16
+	sub $a0, $a0, $s0
 	bgt $a2, $0, getYtrainAvg
-	
+	div.d $f30, $f30, $f2	# faz a média dos valores selecionados em ytrain
 	jr $ra
 				
 # ALGORITMO DE ORDENAMENTO PARA ARR INTERMEDIÁRIO														
@@ -185,19 +222,19 @@ inner_loop:
     bc1f skip_swap          # Se falso, não faz swap
     
     # Swap completo de 16 bytes entre array[j] e array[j+1]
-    move $t7, $t6           # Salvar endereço de array[j]
+    move $s0, $t6           # Salvar endereço de array[j]
     addi $t6, $t6, -16      # Calcular endereço de array[j+1]
     
     # Trocar os primeiros 8 bytes
-    ldc1 $f4, 0($t7)        # Carregar os primeiros 8 bytes de array[j] em $f4
+    ldc1 $f4, 0($s0)        # Carregar os primeiros 8 bytes de array[j] em $f4
     ldc1 $f6, 0($t6)        # Carregar os primeiros 8 bytes de array[j+1] em $f6
-    s.d $f6, 0($t7)         # Escrever os primeiros 8 bytes de array[j+1] em array[j]
+    s.d $f6, 0($s0)         # Escrever os primeiros 8 bytes de array[j+1] em array[j]
     s.d $f4, 0($t6)         # Escrever os primeiros 8 bytes de array[j] em array[j+1]
     
     # Trocar os últimos 8 bytes
-    lw $s7, -8($t7)        # Carregar os últimos 8 bytes de array[j] em $f8
+    lw $s7, -8($s0)        # Carregar os últimos 8 bytes de array[j] em $f8
     lw $s6, -8($t6)       # Carregar os últimos 8 bytes de array[j+1] em $f10
-    sw $s6, -8($t7)        # Escrever os últimos 8 bytes de array[j+1] em array[j]
+    sw $s6, -8($s0)        # Escrever os últimos 8 bytes de array[j+1] em array[j]
     sw $s7, -8($t6)         # Escrever os últimos 8 bytes de array[j] em array[j+1]
 
 skip_swap:
