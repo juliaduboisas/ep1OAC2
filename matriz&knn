@@ -153,7 +153,7 @@ li $t1, 0  #iterador 1 anda pelo array de entrada de 1 em 1
 li $s1, 0  #contador confere se é para parar de andar pelo array (vai ate ser igual a t4)
 
 li $t5, 0
-li $t8, 0  #contador  2, quando for igual a w, reinicia
+li $t1, 0  #contador  2, quando for igual a w, reinicia
 li $t7, 0  #iterador 2
 li $t4, 0
 li $s4, 0
@@ -177,12 +177,12 @@ addi $a1, $a1, 8  #proximo elemento do array de entrada
 addi $s1, $s1, 1  #incrementa o contador 1
 
 li $t7, 0  #zera iterador 2
-sub $t8, $t8, $t8  #zera o contador 2 
+sub $t1, $t1, $t1  #zera o contador 2 
 
 
 criacao1:
 beq $s1, $t4, arrayy  # se temos que para de andar para o array: fi  
-beq $t8, $a2, atualizacao1 # se ja pegamos todos os elementos da linha da matriz: atualizamos
+beq $t1, $a2, atualizacao1 # se ja pegamos todos os elementos da linha da matriz: atualizamos
 
 sll $s4, $t7, 3 
 add $s4, $s4, $a1
@@ -195,7 +195,7 @@ sdc1 $f14, 0($s5)  #armazenamos primeiro elemento
 
 addi $t5, $t5, 1   #apontamos pro proximo endereço pra matriz 
 addi $t7, $t7, 1   #apontamos pro proximo elemento do array de entrada
-addi $t8, $t8, 1   #atualizamos o contador 2
+addi $t1, $t1, 1   #atualizamos o contador 2
 j criacao1
 
 ################################################# IMRPIME O XTEST1 #############################################
@@ -252,7 +252,7 @@ arrayy:
 
     li $t6, 0
     li $t7, 0
-    li $t8, 0 
+    li $t1, 0 
     li $s1, 0
 
     ####### Aloca espaço para o retorno final 
@@ -272,13 +272,13 @@ createarray:
     l.d  $f12, 0($t6)           # Carrega o valor do double de xtrain para $f12
 
     # Calcular o índice no array de saída ytrain
-    mul $t9, $t8, 8             # Multiplica o índice da saída por 8 (pois cada double tem 8 bytes)
-    add $t9, $t9, $a2           # Adiciona o endereço base de ytrain
-    sdc1 $f12, 0($t9)           # Armazena o valor em ytrain
+    mul $t7, $t1, 8             # Multiplica o índice da saída por 8 (pois cada double tem 8 bytes)
+    add $t7, $t7, $a2           # Adiciona o endereço base de ytrain
+    sdc1 $f12, 0($t7)           # Armazena o valor em ytrain
 
     # Atualiza os índices
     addi $t5, $t5, 1            # Avança o índice do array xtrain
-    addi $t8, $t8, 1            # Avança o índice do array ytrain
+    addi $t1, $t1, 1            # Avança o índice do array ytrain
     addi $s1, $s1, 1            # Incrementa o contador
     j createarray
 
