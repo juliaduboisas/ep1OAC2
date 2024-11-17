@@ -242,7 +242,7 @@ arrayy:
     syscall                  # Imprime a quebra de linha
     
     la  $s5, zerof
-    lw $t2, ntrain
+    lw $s5, ntrain
     lw $a3, w        # parametro w     
     lw $t4, h
     la $a1, xtrain    #inicio do array de entrada
@@ -251,7 +251,7 @@ arrayy:
     add $t5, $a3, $t4
     subi $t5, $t5, 1
     move $s4, $t5
-    sub $s7, $t2, $s4 
+    sub $s7, $s5, $s4 
 
     li $t6, 0
     li $t7, 0
@@ -321,6 +321,7 @@ fim_impressao2:
 
 
 main:
+	la  $s5, zerof
 	addi $k0, $0, 2		# $k0 será o k
 	add $k1, $0, $a3		# $k1 será o m
 	
