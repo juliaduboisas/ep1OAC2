@@ -13,6 +13,7 @@
 	fp1: .double 48.00
 	fp2: .double 10.00
 	fp3: .double 1.00
+	zeroDouble: .double 0.00
 .text
 
 .globl main
@@ -86,59 +87,78 @@ carregaParaMatriz:
 		move $s1, $s0 # PONTEIRO QUE VOU USAR PARA ANDAR NO ARRAY
 		move $a0, $t8 # recolocando o valor de $a0
 		
-		li $t3, 1 # estou usando 1 para primeiro inteiro, 2 para outros inteiros, 3 pra primeiro decimal, 4 para outros decimais (???)
+		li $t3, 1 # estou usando 1 para primeiro inteiro, 2 para outros inteiros, 3 pra primeiro decimal, 4 para outros decimais, 5 para o ultimo numero do array
 		
 		l.d $f6, fp1
 		l.d $f8, fp2
 		l.d $f12, fp3
 		
-		l.d $f2, 0.00 # uso pra armazenar inteiro
-		l.d $f4, 0.00 # uso pra armazenar decimal
+		l.d $f2, zeroDouble # uso pra armazenar inteiro
+		l.d $f4, zeroDouble # uso pra armazenar decimal
 		
 		loopTransformaChar:
 			lb $t1, 0($a1)
 			l.d $f0, 0($s1) # NAO SEI SE POSSO FAZER
 			
 			beq $t1, 10, proxNumero # checa se chegou no fim da linha
-			beq $t1, $zero, fimTranformacao # checa se chegou no fim do arquivo
+			beq $t1, $zero, fimTransformacao # checa se chegou no fim do arquivo
 			beq $t3, 1, inteiro # t3 marca que tipo de numero adicionar
 			beq $t1, 46, marcaDecimal # checa se chegou no "."
 			beq $t3, 2, inteiroLoop
 			beq $t3, 3, decimal
 			beq $t3, 4, decimalLoop
+			blt $t1, 48, pulaChar
+			bgt $t1, 58, pulaChar
+			
+			pulaChar:
+				l.d $f2, zeroDouble # uso pra armazenar inteiro
+				l.d $f4, zeroDouble # uso pra armazenar decimal
+				li $t3, 1 # avisa que o proximo e inicio de um inteiro
+				add $a1, $a1, 1
+				
+				jal loopTransformaChar
 			
 			inteiro:
-				bgt $t3, 1, inteiroLoop
-				move $f2, $t1 # NAO SEI SE VAI FUNCIONAR
-				sub.d $f2, $f2, $f6 # guarda o inteiro em $f2 depois de transformar
+				bgt $t3, 1, inteiroLoop # se nao for o primeiro inteiro para pro prox loop de inteiros
+				sub $t1, $t1, '0' # NAO SEI SE VAI FUNCIONAR
+				mtc1 $t1, $f10 # bota o conteudo de $t1 em $f10 (que uso como registrador temporario)
+				cvt.d.w $f10, $f10 # deixa como double
+				mov.d $f2, $f10 # bota no registrador que estou usando para guardar um inteiro
 				add $a1, $a1, 1 # passa para o prox numero
 				li $t3, 2 # avisa que o proximo e pelo menos segundo de um inteiro
 				jal loopTransformaChar
 			
 			inteiroLoop:
-				bgt $t3, 2, marcaDecimal # se nao for inteiro passa pro loop de decimal
-				move $f10, $t1 # USANDO $F10 COMO TEMPORARIO
+				bgt $t3, 2, decimal # se nao for inteiro passa pro loop de decimal
+				sub $t1, $t1, 48 # NAO SEI SE VAI FUNCIONAR
+				mtc1 $t1, $f10 # bota o conteudo de $t1 em $f10 (que uso como registrador temporario)
+				cvt.d.w $f10, $f10 # deixa como double
 				mul.d $f2, $f2, $f8 # multiplica o antigo por 10.00
 				add.d $f2, $f2, $f10 # soma o valor atual com o valor antigo
 				add $a1, $a1, 1
 				jal loopTransformaChar
 			
 			marcaDecimal:
+				bgt $t3, 2, decimal
 				li $t3, 3 # marca que o proximo e pelo menos o primeiro decimal
 				add $a1, $a1, 1 # passa para o prox numero
 				jal loopTransformaChar
 			
 			decimal:
 				bgt $t3, 3, decimalLoop
-				move $f4, $t1
-				sub.d $f4, $f4, $f6 # guarda o inteiro em $f4 depois de transformar
+				sub $t1, $t1, 48 # NAO SEI SE VAI FUNCIONAR
+				mtc1 $t1, $f10 # bota o conteudo de $t1 em $f10 (que uso como registrador temporario)
+				cvt.d.w $f10, $f10 # deixa como double
+				mov.d $f4, $f10 # bota no registrador que estou usando para guardar um decimal
 				add $a1, $a1, 1 # passa para o prox numero
 				li $t3, 4
 				jal loopTransformaChar
 				
 			decimalLoop:
 				bgt $t3, 2, marcaDecimal # se nao for inteiro passa pro loop de decimal
-				move $f10, $t1 # USANDO $F10 COMO TEMPORARIO
+				sub $t1, $t1, 48 # NAO SEI SE VAI FUNCIONAR
+				mtc1 $t1, $f10 # bota o conteudo de $t1 em $f10 (que uso como registrador temporario)
+				cvt.d.w $f10, $f10 # deixa como double
 				mul.d $f4, $f4, $f8 # multiplica o antigo por 10.00
 				add.d $f4, $f4, $f10 # soma o valor atual com o valor antigo
 				add $a1, $a1, 1 # passa para o prox numero
@@ -148,31 +168,33 @@ carregaParaMatriz:
 				# CALCULO DO NUMERO
 				# transforma o decimal em um numero menor que 1
 				c.le.d $f12, $f4
-				beq $31, 1, loopTransformaChar
+				beq $31, 1, loopTransformaDecimal
 					
 				# adiciona a parte inteira com a parte decimal e guarda em f0 (no array)
-				l.d $f10, $f2
-				add.d $f10, $f10, $f4 
-				l.d $f0, $f10
+				l.d $f10, zeroDouble
+				add.d $f10, $f2, $f4 
+				mov.d $f0, $f10
 				
 				# depois de guardar o numero
-				l.d $f2, 0.00 # uso pra armazenar inteiro
-				l.d $f4, 0.00 # uso pra armazenar decimal
+				l.d $f2, zeroDouble # uso pra armazenar inteiro
+				l.d $f4, zeroDouble # uso pra armazenar decimal
 				li $t3, 1 # avisa que o proximo e inicio de um inteiro
 				add $s1, $s1, 8
 				
 				jal loopTransformaChar
 			
 			fimTransformacao:
+				li $t3, 5
 				# TRATA O ULTIMO NUMERO
 					# CALCULO DO NUMERO
 					# transforma o decimal em um numero menor que 1
-					bgt $f4, 1, loopTransformaDecimal
+					c.le.d $f12, $f4
+					beq $31, 1, loopTransformaDecimal
 		
 					# adiciona a parte inteira com a parte decimal e guarda em f0 (no array)
-					l.d $f10, $f2
-					add.d $f10, $f10, $f4 
-					l.d $f0, $f10
+					l.d $f10, zeroDouble
+					add.d $f10, $f2, $f4 
+					mov.d $f0, $f10
 				
 				move $t8, $a0
 				li $v0, 2
@@ -185,6 +207,6 @@ carregaParaMatriz:
 			
 			loopTransformaDecimal:
 				div.d $f4, $f4, $f8 # divide o valor em $f4 por 10
-				c.le.d $f12, $f4
+				c.le.d $f12, $f4 # se for UM, $f4 eh decimal; se for 0, $f4 ainda tem parte inteira e precisa ser dividido de novo
 				beq $31, 1, loopTransformaChar
 				beq $31, 0, proxNumero
