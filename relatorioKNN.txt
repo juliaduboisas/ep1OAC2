@@ -1,0 +1,64 @@
+# KNN
+
+
+Para o funcionamento do algoritmo, são alocados espaços em memória para duas estruturas: o y-test e o array intermediário. Todas as estruturas usadas no KNN são alocadas deslocando o stack pointer o número necessário de espaços, mantendo um ponteiro para o início da estrutura. O stack pointer é ajustado para ser divisível por 8 no início do algoritmo, garantido assim que todos os endereços estarão alinhados para armazenar doubles.
+
+### O array intermediário
+
+O array intermediário é a estrutura que armazena as distâncias entre um vetor de x-test e todos os vetores de x-train, como também o índice do vetor de x-train correspondente a cada distância. Portanto, cada posição deste array tem tamanho de 16 bytes, pois a distância é um double (8 bytes) e o índice é um inteiro (4 bytes), o que resulta em 12 bytes que devem ser completados para 16 para que o próximo endereço do array seja divisível por 8. Assim, este se torna compatível com armazenamento de doubles (assumindo que o endereço base também é divisível por 8).
+
+### O y-test
+
+O y-test é a estrutura que armazena o resultado final do algoritmo, ou seja, que armazena a média dos k valores de y-train selecionadas pelo algoritmo. Cada posição do y-test tem 8 bytes para armazenar doubles.
+
+### Funcionamento do algoritmo
+
+1- Itera por x-teste;
+	1.1 - Para cada vetor em x-teste, itera por x-train calculando as distâncias e coloca as distâncias e os seus índices correspondentes no array intermediário;
+	1.2 - Ordena o array intermediário em ordem crescente por bubble sort;
+	1.3 - Itera pelos k primeiros itens do array intermediário ordenado;
+		1.3.1 - Para cada item do array intermediário, recupera o índice armazenado e soma o valor de y-test[índice] em um acumulador;
+	1.4 - Realiza a divisão (acumulador / k) e armazena o resultado em y-test.
+	
+## Tecnicalidades
+	
+	Constantes importantes:
+	
+	- $k1 = m
+	- $k0 = k
+
+	A base do array intermediário é armazenada em $s4, com o seu tamanho para iteração em $t4. A base de y-test fica armazenada em $s5. O loop de x-test funciona por meio de um bgt $t0, $0, loopXtest onde $t0 é o tamanho de x-teste e a cada iteração é executado subi $t0, $t0, $k1. O loop do x-train funciona da mesma forma, porém usando o tamanho de xtrain para o bgt.
+
+	Em cada loop, são chamadas algumas funções para deixar o código mais organizado e legível:
+	
+	### pegaDistVetor
+	
+	A função pegaDistVetor é utilizada para calcular a distância de um vetor de x-teste e um de x-train. Os parâmetros passados para esta função são:
+	- $a2 com o valor de m, usado para saber quantos valores tem cada vetor;
+	- $a0 com $t6, que armazena o endereço do vetor de x-train a ser usado para o cálculo;
+	- $a1 com $s2, que armazena o endereço do vetor de x-test a ser usado para o cálculo.
+	
+	A função então carrega os dois primeiros doubles a serem processados e os armazena em $f0 e $f2. Estes valores são correspondentes, por exemplo, às coordenadas X dos dois vetores. Então fazemos sub $f0, $f0, $f2 e mul $f0, $f0, $f0 e o valor em $f0 agora é a distância quadrática da coordenada X. Esse valor é então adicionado à $f30, que foi pré-inicializado com zero e será o registrador de retorno desta função. Agora, subtraímos 1 de $a2, adicionamos 8 à $a0 e $a1 (para pegar as próximas coordenadas) e, caso $a2 seja maior do que zero, repetimos o processo, pois ainda há mais coordenadas neste vetor (cada vetor tem m coordenadas). 
+	No final, $f30 terá a distância quadrática entre os dois vetores.
+	
+	### getYtrainAvg
+	
+	A função getYtrainAvg é utilizada para calcular a média dos valores certos de y-train. Os parâmetros passados para esta função são:
+	-$a0 = endereço base de y-train
+	-$a1 = endereço base do array intermediário
+	-$a2 = k
+	-$f2 = k (em formato double)
+	
+	A função funciona carregando o valor de -8($a1) em $s0. Este valor carregado é o índice correspondente a cada valor armazenado no array intermediário. Como este índice é sempre armazenado logo depois do double, é necessário o deslocamento de -8. Carregado o índice, este é multiplicado por 8 para resultar no deslocamento necessário para y-train. Este deslocamento então adicionado a $a0, para assim chegarmos à posição correta. O valor de ($a0) é então carregado em $f0, e adicionado à variável acumuladora, pré inicializada em zero, $f30. Subtraímos então 1 de $a2, e 16 de $a1 (assim efetivamente avançando de posição no array intermediário), e voltamos o $a0 à sua posição original. Agora, checamos se $a0 é maior que zero, se não, repetimos o processo (assim pegamos k valores de y-train). 
+	Ao final, com a somatória dos k valores em $f30, fazemos a média e a armazenamos em $f30 com div.d $f30, $f30, $f2.
+	
+	Após o retorno da função o valor é armazenado em y-test e os endereços são atualizados para etarem prontos para a próxima inserção.
+	
+	### adjustsp
+	
+	A função adjustsp é utilizada para ajustar o stack pointer para que ele seja divisível por 8. O funcionamento é bem simples: $sp é dividido por 8, o resto da divisão é recuperado de HI usando mfhi, e tal valor é subtraído de $sp, tornando assim $sp divisível por 8 e próprio para armazenamento de doubles.
+		
+
+	
+	
+	
