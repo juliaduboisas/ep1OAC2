@@ -14,6 +14,9 @@
 	fp2: .double 10.00
 	fp3: .double 1.00
 	zeroDouble: .double 0.00
+	
+	# Chars needed
+	newLine: .asciiz "\n"
 .text
 
 .globl main
@@ -178,11 +181,7 @@ carregaParaMatriz:
 				# adiciona a parte inteira com a parte decimal e guarda em f0 (no array)
 				l.d $f10, zeroDouble
 				add.d $f10, $f2, $f4 
-				mov.d $f0, $f10
-				
-				mov.d $f12, $f0
-				li $v0, 3
-				syscall
+				s.d $f10, ($s1)
 				
 				# depois de guardar o numero
 				l.d $f2, zeroDouble # uso pra armazenar inteiro
@@ -196,6 +195,20 @@ carregaParaMatriz:
 			fimTransformacao:
 				li $t3, 5
 				
+				move $s1, $s0
+				li $t1, 0
+				move $t8, $a0
+				la $a0, newLine
+				loopImprimeArray:
+					l.d $f12, ($s1)
+					li $v0, 3
+					syscall
+					add $s1, $s1, 8
+					add $t1, $t1, 1
+					blt $t1, $a3, loopImprimeArray
+				
+				move $a0, $t8
+				
 				li $v0, 10
 				syscall
 			
@@ -204,3 +217,4 @@ carregaParaMatriz:
 				c.lt.d $f4, $f14 # se for UM, $f4 eh decimal; se for 0, $f4 ainda tem parte inteira e precisa ser dividido de novo
 				bc1f 0, loopTransformaDecimal
 				bc1t 0, proxNumero
+	
