@@ -217,7 +217,7 @@ impressao_loop1:
     addi $t9, $t9, 8         # Avança para o próximo valor do array (saída)
 
     # Condição de parada: se terminou de imprimir todos os elementos
-    mul $t3, $t4, $a2
+    #mul $t3, $t4, $a2
     #li $t3, $t4                # Recarrega o tamanho do array de entrada
     beq $t1, $t2, arrayy
 
