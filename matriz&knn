@@ -7,14 +7,14 @@
 
 #######  PARÂMETROS PARA GERAR A MATRIZ DO XTRAIN O YTRAIN DA GABI
 
-xtrain: .double 4.0, 5.0, 9.0, 7.0, 8.0
-ntrain: .word 5      #tamanho do array de entrada (futuramente será a quantidade de pontos do input)
+xtrain: .double 4.99, 5.67, 9.134, 5.67, 9.134, 7.567, 9.134, 7.567, 8.547, 7.567, 8.547, 9.88, 8.547, 9.88, 5.32, 9.88, 5.32, 6.12, 5.32, 6.12, 9.44
+ntrain: .word 21      #tamanho do array de entrada (futuramente será a quantidade de pontos do input)
 xtrain1: .space 400    #aloca espaço para os array de saida da matriz     $t6
-ytrain: .double 7.0, 8.0
+ytrain: .space 400
 
 #######  ENTRADAS PARA GERAR MATRIZ DO XTEST DA GABI 
-xtest: .double 4.9, 5.6, 9.1, 5.6, 9.1 
-ntest:  .word 5
+xtest: .double 7.567, 8.547, 9.88, 10.00, 10.768, 11.4356, 4.99, 5.67, 9.134, 7.567, 8.547, 9.88, 5.32, 6.12, 9.44
+ntest:  .word 15
 xtest1: .space 400                                                      # $t9
 
 
@@ -61,6 +61,7 @@ li $t5, 0
 
 ######    Alocando espaço para o array de retorno 
 mul $t3, $t4, $a2
+
 mul $s3, $t3, 8
 li $v0, 9 
 move $a0, $s3
@@ -143,7 +144,7 @@ la  $a3, zerof
       
 lw $t2, ntest
 lw $a2, w        # parametro w     
-lw $t3, h
+lw $a3, h
 la $a1, xtest    #inicio do array de entrada
 la $t9, xtest1
 
@@ -159,11 +160,12 @@ li $t4, 0
 li $s4, 0
 
 sub  $t4, $t2, $a2  #(n-w)
-sub  $t4, $t4, $t3  #(n-w-h)
+sub  $t4, $t4, $a3  #(n-w-h)
 addi $t4, $t4, 2
 
 li $t5, 0
 mul $t2, $t4, $a2
+
 mul $s3, $t2, 8
 li $v0, 9 
 move $a0, $s3
@@ -203,8 +205,9 @@ j criacao1
 # Fim da criação, começa a impressão
 impressao1:
     li $t1, 0                # Zera o iterador para a impressão
-
+    la  $a3, zerof
 impressao_loop1:
+
     l.d $f12, 0($a3)  
     li $v0, 3               # Código da syscall para imprimir inteiro
     l.d $f12, 0($t9)           # Carrega o valor de saída
@@ -313,7 +316,7 @@ fim_impressao2:
 ########## registrador do xtest1        $t9
 ########## tamanho do xtest1            $t2 (considerando o "0")
 ########## registrador do ytrain        $a2
-########## tamanho do ytest             $s7
+########## tamanho do ytrain             $s7
 ########## último reg que o W foi alocado $a3
 
 
@@ -326,7 +329,6 @@ main:
 	li $s2, 0
 	li $s3, 0
 	li $a1, 0
-	li $a2, 0
 	li $a0, 0
 	li $t0, 0 
 	li $t1, 0 
@@ -343,7 +345,7 @@ main:
 	# TAMANHOS DOS ARRAYS
 	add $t0, $0, $t2	        # tamanho de xtest
 	add $t1, $0, $t3               # tamanho de xtrain
-	add $t2, $0, $a2		# tamanho de ytrain
+	add $t2, $0, $s7		# tamanho de ytrain
 	
 	div $t3, $t0, $k1		# tamanho de ytest (xtest / m)
 
