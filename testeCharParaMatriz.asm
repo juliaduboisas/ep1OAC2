@@ -172,7 +172,7 @@ carregaParaMatriz:
 			proxNumero:
 				# CALCULO DO NUMERO
 				# transforma o decimal em um numero menor que 1
-				c.le.d $f4, $f14
+				c.lt.d $f4, $f14
 				bc1f 0, loopTransformaDecimal
 				
 				# adiciona a parte inteira com a parte decimal e guarda em f0 (no array)
@@ -201,6 +201,6 @@ carregaParaMatriz:
 			
 			loopTransformaDecimal:
 				div.d $f4, $f4, $f8 # divide o valor em $f4 por 10
-				c.le.d $f4, $f14 # se for UM, $f4 eh decimal; se for 0, $f4 ainda tem parte inteira e precisa ser dividido de novo
+				c.lt.d $f4, $f14 # se for UM, $f4 eh decimal; se for 0, $f4 ainda tem parte inteira e precisa ser dividido de novo
 				bc1f 0, loopTransformaDecimal
 				bc1t 0, proxNumero
