@@ -332,7 +332,6 @@ main:
 	li $a0, 0
 	li $t0, 0 
 	li $t1, 0 
-	li $t2, 0
 	l.s $f12, 0($s5)  
 	l.s $f0, 0($s5)  
 	l.s $f4, 0($s5)  
