@@ -11,10 +11,11 @@
 .globl main
 main:
 	l.d $f0, param
-	l.d $f2, v2
-	c.le.d $f2, $f0
-	bc1f 0, printLTE
-	bc1t 0, printGT
+	l.d $f2, v0
+	add.d $f4, $f2, $f2
+	c.le.d $f4, $f0
+	bc1t 0, printLTE
+	bc1f 0, printGT
 	jal none
 printLTE:
 	la $a0, lessthan
