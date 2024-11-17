@@ -226,70 +226,71 @@ arrayy:
     li $a0, 10               # Código ASCII de '\n' (nova linha)
     syscall                  # Imprime a quebra de linha
     
-la  $s5, zerof
-        
-lw $t2, ntrain
-lw $a3, w        # parametro w     
-lw $t4, h
-la $a1, xtrain    #inicio do array de entrada
-la $a2, ytrain
+    la  $s5, zerof
+    lw $t2, ntrain
+    lw $a3, w        # parametro w     
+    lw $t4, h
+    la $a1, xtrain    #inicio do array de entrada
+    la $a2, ytrain    #inicio do array de saída
 
-add $t5, $a3, $t4
-subi $t5, $t5, 1
-move $s4, $t5
-sub $s7, $t2, $s4 
+    add $t5, $a3, $t4
+    subi $t5, $t5, 1
+    move $s4, $t5
+    sub $s7, $t2, $s4 
 
-li $t6, 0
-li $t7, 0
-li $t8, 0 
-li $s1, 0
+    li $t6, 0
+    li $t7, 0
+    li $t8, 0 
+    li $s1, 0
 
-#######aloca espaço pro retorno final 
+    ####### Aloca espaço para o retorno final 
 
-mul $s3, $s7, 8
-li $v0, 9 
-move $a0, $s3
-syscall
-move $a2, $v0
+    mul $s3, $s7, 8      # Multiplica o número de elementos por 8 (pois cada double tem 8 bytes)
+    li $v0, 9            # Chama o serviço de alocação dinâmica
+    move $a0, $s3        # Passa o tamanho do espaço
+    syscall
+    move $a2, $v0        # Armazena o ponteiro de alocação em $a2
 
 createarray:
-beq $s1, $s7, impressao2
+    beq $s1, $s7, impressao2
 
-sll $t6, $t5, 3
-add $t6, $t6, $a1
-l.d  $f12, 0($t6)
+    # Calcular o índice no array de entrada xtrain
+    sll $t6, $t5, 3             # Multiplica o índice por 8 para acessar o double (8 bytes)
+    add $t6, $t6, $a1           # Adiciona o endereço base de xtrain
+    l.d  $f12, 0($t6)           # Carrega o valor do double de xtrain para $f12
 
-mul $t9, $t8, 8
-add $t9, $t9, $a2
-sdc1 $f12, 0($t9)
+    # Calcular o índice no array de saída ytrain
+    mul $t9, $t8, 8             # Multiplica o índice da saída por 8 (pois cada double tem 8 bytes)
+    add $t9, $t9, $a2           # Adiciona o endereço base de ytrain
+    sdc1 $f12, 0($t9)           # Armazena o valor em ytrain
 
-addi $t5, $t5, 1
-addi $t8, $t8, 1
-addi $s1, $s1, 1
-j createarray 
-
+    # Atualiza os índices
+    addi $t5, $t5, 1            # Avança o índice do array xtrain
+    addi $t8, $t8, 1            # Avança o índice do array ytrain
+    addi $s1, $s1, 1            # Incrementa o contador
+    j createarray
 
 impressao2:
-    li $t1, 0
-                    
-impressao_loop2:
-    l.s $f12, 0($s5)  
-    li $v0, 3                # Código da syscall para imprimir inteiro
-    l.s $f12, 0($a2)           # Carrega o valor de saída
-    syscall                  # Imprime o número
+    li $t1, 0                    # Inicializa contador para impressão
 
-    addi $t1, $t1, 1         # Incrementa o contador de elementos
-    addi $a2, $a2, 8   
-          # Avança para o próximo valor do array (saída)
-            
+impressao_loop2:
+    l.d $f12, 0($a2)             # Carrega o próximo valor de ytrain
+    li $v0, 3                    # Syscall para imprimir double
+    syscall
+
+    addi $t1, $t1, 1             # Incrementa contador de elementos
+    addi $a2, $a2, 8             # Avança o ponteiro para o próximo double
+
+    # Verifica se todos os elementos foram impressos
     beq $t1, $s7, fim_impressao2
     
-    # Para impressão, podemos colocar uma quebra de linha entre os valores
-    li $v0, 11               # Código da syscall para imprimir caractere
-    li $a0, 10               # Código ASCII de '\n' (nova linha)
-    syscall                  # Imprime a quebra de linha
-    j impressao_loop2         # Continua o loop de impressão
+    # Imprime nova linha para separação dos números
+    li $v0, 11                   # Código da syscall para imprimir caractere
+    li $a0, 10                   # Código ASCII de '\n' (nova linha)
+    syscall
+
+    j impressao_loop2            # Continua o loop de impressão
 
 fim_impressao2:
-    li $v0, 10               # Código da syscall para terminar o programa
-    syscall                  # Finaliza o programa
+    li $v0, 10                   # Código da syscall para terminar o programa
+    syscall                      # Finaliza o programa
