@@ -2,7 +2,7 @@
 
 .data
 	# Caminhos dos arquivos
-	pathXTrain: .asciiz "data/cc.txt"
+	pathXTrain: .asciiz "legacyAndTests/cc.txt"
 	contMatriz: .asciiz "tentativa"
 	
 	# Buffer

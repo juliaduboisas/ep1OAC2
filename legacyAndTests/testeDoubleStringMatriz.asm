@@ -3,6 +3,7 @@
 .data
 	# Caminhos dos arquivos
 	pathXTrain: .asciiz "legacyAndTests/bb.txt"
+	pathYTest: .asciiz "legacyAndTests/cc.txt"
 	
 	# Buffer
 	buffer: .space 10000
@@ -25,7 +26,7 @@ main:
 	la $a0, pathXTrain # descobre qual arquivo abrir
 	la $t6, buffer  # carrega o tamanho do buffer onde guardar o conteudo
 	li $a3, 0 # carrega 0 no registrador a3
-	jal carregaParaMatrizXTrain
+	j carregaParaMatrizXTrain
 	
 carregaParaMatrizXTrain:
 	descobreNumLinhasXTrain:
@@ -67,16 +68,16 @@ carregaParaMatrizXTrain:
 			syscall
 			move $a0, $t8
 			
-			jal transformaEmArrayXTrain
+			j transformaEmArrayXTrain
 			
 			
 		maisLinhaXTrain:
 				add $a3, $a3, 1
-				jal proxLinhaXTrain
+				j proxLinhaXTrain
 				
 		proxLinhaXTrain:
 				add $a1, $a1, 1
-				jal loopContaLinhasXTrain
+				j loopContaLinhasXTrain
 
 	transformaEmArrayXTrain:
 		move $a1, $t0 # volta a1 para o inicio do buffer
@@ -125,7 +126,7 @@ carregaParaMatrizXTrain:
 				li $t3, 1 # avisa que o proximo e inicio de um inteiro
 				add $t0, $t0, 1
 				
-				jal loopTransformaCharXTrain
+				j loopTransformaCharXTrain
 			
 			inteiroXTrain:
 				bgt $t3, 1, inteiroLoopXTrain # se nao for o primeiro inteiro para pro prox loop de inteiros
@@ -135,7 +136,7 @@ carregaParaMatrizXTrain:
 				mov.d $f2, $f10 # bota no registrador que estou usando para guardar um inteiro
 				add $t0, $t0, 1 # passa para o prox numero
 				li $t3, 2 # avisa que o proximo e pelo menos segundo de um inteiro
-				jal loopTransformaCharXTrain
+				j loopTransformaCharXTrain
 			
 			inteiroLoopXTrain:
 				bgt $t3, 2, decimalXTrain # se nao for inteiro passa pro loop de decimal
@@ -145,13 +146,13 @@ carregaParaMatrizXTrain:
 				mul.d $f2, $f2, $f8 # multiplica o antigo por 10.00
 				add.d $f2, $f2, $f10 # soma o valor atual com o valor antigo
 				add $t0, $t0, 1
-				jal loopTransformaCharXTrain
+				j loopTransformaCharXTrain
 			
 			marcaDecimalXTrain:
 				bgt $t3, 2, decimalXTrain
 				li $t3, 3 # marca que o proximo e pelo menos o primeiro decimal
 				add $t0, $t0, 1 # passa para o prox numero
-				jal loopTransformaCharXTrain
+				j loopTransformaCharXTrain
 			
 			decimalXTrain:
 				bgt $t3, 3, decimalLoopXTrain
@@ -161,7 +162,7 @@ carregaParaMatrizXTrain:
 				mov.d $f4, $f10 # bota no registrador que estou usando para guardar um decimal
 				add $t0, $t0, 1 # passa para o prox numero
 				li $t3, 4
-				jal loopTransformaCharXTrain
+				j loopTransformaCharXTrain
 				
 			decimalLoopXTrain:
 				sub $t1, $t1, 48 # NAO SEI SE VAI FUNCIONAR
@@ -170,7 +171,7 @@ carregaParaMatrizXTrain:
 				mul.d $f4, $f4, $f8 # multiplica o antigo por 10.00
 				add.d $f4, $f4, $f10 # soma o valor atual com o valor antigo
 				add $t0, $t0, 1 # passa para o prox numero
-				jal loopTransformaCharXTrain
+				j loopTransformaCharXTrain
 				
 			proxNumeroXTrain:
 				# CALCULO DO NUMERO
@@ -190,7 +191,7 @@ carregaParaMatrizXTrain:
 				add $t0, $t0, 1
 				add $s1, $s1, 8
 				
-				jal loopTransformaCharXTrain
+				j loopTransformaCharXTrain
 			
 			loopTransformaDecimalXTrain:
 				div.d $f4, $f4, $f8 # divide o valor em $f4 por 10
@@ -201,8 +202,14 @@ carregaParaMatrizXTrain:
 			fimTransformacaoXTrain:
 				li $t3, 5
 				
+				la $t1, '\n'
+				move $t0, $t1 # coloca o contrabarra do decimal no array de strings
+				move $a0, $t0
+				li $v0, 11
+				syscall
+				
 				move $s1, $s0
-				jal m1
+				j voltaPraString
 				
 	
 	
@@ -211,6 +218,7 @@ carregaParaMatrizXTrain:
 #### MATRIZ ESTA EM S0
 	
 voltaPraString:
+	move $a3, $t3
 	move $s5, $s0 # ARRAY DOS NUMEROS
 	move $s3, $s5 # PONTEIRO QUE VOU USAR PRA ANDAR NO ARRAY DE NUMEROS
 	
@@ -237,16 +245,16 @@ voltaPraString:
 	
 	li $t2, 0 # usado para contar quantas linhas do ARRAY DE NUMEROS ja foram
 	
-	jal arrumaNum
+	j arrumaNum
 
 arrumaNum:
-	la $t0, ($s1)
+	lb $t0, ($s1)
 	
 	l.d $f6, ($s3) # BOTA EM F6 O PRIMEIRO NUMERO
 	cvt.w.d $f0, $f6 # converte float para int
 	
 	mfc1 $a1, $f0 # guarda em um registrador
-	mtc1 $a1,$f8 # bota o pedaco inteiro em um coprocessador
+	mtc1 $a1, $f8  # bota o pedaco inteiro em um coprocessador
 	
 	cvt.d.w $f8, $f8 # converte o pedaco inteiro em float para poder fazer operacoes
 	
@@ -274,37 +282,69 @@ arrumaNum:
 		mul $t6, $t6, $t7 # multiplica o resto pela 10 ^ numDeCiclos
 		mul $t7, $t7, 10 # atualiza potencia do num de ciclos
 		add $t5, $t5, $t6 # soma com o decimal anterior
-		jal descobreChar
+		j descobreChar
 			
 	colocaChar:
 		add $a0, $t1, 48 # calcula o char
-		move $t0, $a0
+		sb $a0, ($s1)
+		move $a0, $t0
+		li $v0, 11
+		syscall
 		add $s1, $s1, 1
-		la $t0, ($s1) # passa pro proximo char
 		move $t1, $t5 # passa o resto para analisar
 		li $t5, 0
 		beq $t1, 0, terminaInt
-		jal descobreChar
+		j descobreChar
 
 	terminaInt:
 		beq $a2, 0, terminaNumero
 		la $t1, '.'
-		move $t0, $t1 # coloca o ponto do decimal no array de strings
+		sb $t1, ($s1) # coloca o ponto do decimal no array de strings
+		move $a0, $t0
+		li $v0, 11
+		syscall
 		add $s1, $s1, 1
-		la $t0, ($s1) # passa pro proximo char
 		move $t1, $a2
 		li $a2, 0
-		jal descobreChar
+		j descobreChar
 		
 	terminaNumero:
 		add $t2, $t2, 1 # contador de numeros
 		beq $t2, $a3, finalizaDoubleString
 		add $s3, $s3, 8 # passa para o proximo double
 		la $t1, '\n'
-		move $t0, $t1 # coloca o contrabarra do decimal no array de strings
+		sb $t1, ($s1) # coloca o contrabarra do decimal no array de strings
+		move $a0, $t0
+		li $v0, 11
+		syscall
 		add $s1, $s1, 1
-		la $t0, ($s1) # ando no array de strings
-		jal arrumaNum
+		lb $t0, ($s1) # ando no array de strings
+		j arrumaNum
 		
 	finalizaDoubleString:
-		
+		j escreverYTest
+
+escreverYTest: # NESSE TESTE ESCREVE SIMPLESMENTE O CONTEÚDO DO ARQUIVO bb.txt
+	la $a0, pathYTest # path do arquivo
+	li $a1, 1 # modo escrita
+	li $v0, 13
+	syscall
+	
+	move $s3, $v0
+	
+	li $v0, 16
+	move $a0, $s0
+	syscall
+
+	mul $a3, $a3, 10
+	
+	# escrevendo a string
+	li $v0, 15
+	move $a0, $s3
+	move $a1, $s2
+	move $a2, $a3
+	syscall
+	
+	li $v0, 10
+	syscall
+

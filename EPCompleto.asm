@@ -7,6 +7,7 @@
 	# caminhos dos arquivos
 	pathXTrain: .asciiz "data/Xtrain.txt"
 	pathXTest: .asciiz "data/Xtest.txt"
+	pathYTest: .asciiz "output/Ytest.txt"
 	
 	# buffer
 	buffer: .space 10000
@@ -856,18 +857,137 @@ loopXtrain:
 	la $a0, newline
 	li $v0, 4
 	syscall
-	
-loopYtest:
 
-	l.d $f12, ($s5)
-	addi $v0, $0, 3
+######################################################################## FINALIZANDO ESCRITA ######################################################################	
+
+voltaPraString:
+	move $a3, $t3
+	move $s5, $s0 # ARRAY DOS NUMEROS
+	move $s3, $s5 # PONTEIRO QUE VOU USAR PRA ANDAR NO ARRAY DE NUMEROS
+	
+	move $a1, $t0 # volta a1 para o inicio do buffer
+	
+	## descobrindo o espaco necessario para o novo array de chars
+	mul $t4, $a3, 10 # estou usando 10 como chars/linha -> total aqui esta com 30 bytes
+	
+	move $t8, $a0 # preservando o valor que esta em a0
+	
+	move $a0, $t4
+	li $v0, 9
+	syscall # aloca espaco para o array
+	
+	move $a0, $t8 # devolvendo o valor de a0
+	
+	move $s2, $v0 # SALVANDO PONTEIRO DO ARRAY DAS STRINGS
+	move $s1, $s2 # PONTEIRO QUE VOU USAR PRA ANDAR NO ARRAY DAS STRINGS
+	
+	l.d $f2, fp2
+	l.d $f4, zerof
+	
+	li $t0, 0	
+	
+	li $t2, 0 # usado para contar quantas linhas do ARRAY DE NUMEROS ja foram
+	
+	j arrumaNum
+
+arrumaNum:
+	lb $t0, ($s1)
+	
+	l.d $f6, ($s3) # BOTA EM F6 O PRIMEIRO NUMERO
+	cvt.w.d $f0, $f6 # converte float para int
+	
+	mfc1 $a1, $f0 # guarda em um registrador
+	mtc1 $a1,$f8  # bota o pedaco inteiro em um coprocessador
+	
+	cvt.d.w $f8, $f8 # converte o pedaco inteiro em float para poder fazer operacoes
+	
+	sub.d $f8, $f6, $f8 # pega so a parte decimal
+	
+	mul.d $f8, $f8, $f2 # multiplica por 10 para acessar a primeira casa decimal
+	mul.d $f8, $f8, $f2 # multiplica por 10 para acessar as duas primeiras casas decimais
+	
+	cvt.w.d $f8, $f8 # converte os decimais para int
+	mfc1 $a2, $f8 # coloca em um registrador
+	
+	# FUNCIONANDO ATE AQUI
+	# EM A1 TEMOS A PARTE INTEIRA E EM A2 TEMOS A PARTE DECIMAL
+	
+	move $t1, $a1 # bota a parte inteira em a3 para descobrir o char
+	li $t3, 10 # para usar na divisao
+	li $t5, 0
+	li $t7, 1
+	
+	descobreChar:
+		blt $t1, 10, colocaChar
+		div $t1, $t3
+		mflo $t1 # quociente (aka numero da vez)
+		mfhi $t6
+		mul $t6, $t6, $t7 # multiplica o resto pela 10 ^ numDeCiclos
+		mul $t7, $t7, 10 # atualiza potencia do num de ciclos
+		add $t5, $t5, $t6 # soma com o decimal anterior
+		j descobreChar
+			
+	colocaChar:
+		add $a0, $t1, 48 # calcula o char
+		sb $a0, ($s1)
+		move $a0, $t0
+		li $v0, 11
+		syscall
+		add $s1, $s1, 1
+		move $t1, $t5 # passa o resto para analisar
+		li $t5, 0
+		beq $t1, 0, terminaInt
+		j descobreChar
+
+	terminaInt:
+		beq $a2, 0, terminaNumero
+		la $t1, '.'
+		sb $t1, ($s1) # coloca o ponto do decimal no array de strings
+		move $a0, $t0
+		li $v0, 11
+		syscall
+		add $s1, $s1, 1
+		move $t1, $a2
+		li $a2, 0
+		j descobreChar
+		
+	terminaNumero:
+		add $t2, $t2, 1 # contador de numeros
+		beq $t2, $a3, finalizaDoubleString
+		sub $s3, $s3, 8 # passa para o proximo double
+		la $t1, '\n'
+		sb $t1, ($s1) # coloca o contrabarra do decimal no array de strings
+		move $a0, $t0
+		li $v0, 11
+		syscall
+		add $s1, $s1, 1
+		lb $t0, ($s1) # ando no array de strings
+		j arrumaNum
+		
+	finalizaDoubleString:
+		j escreverYTest
+
+################################################# FUNCOES AUX YTEST #####################################################
+escreverYTest: # NESSE TESTE ESCREVE SIMPLESMENTE O CONTEÚDO DO ARQUIVO bb.txt
+	la $a0, pathYTest # path do arquivo
+	li $a1, 1 # modo escrita
+	li $v0, 13
 	syscall
-	la $a0, newline
-	li $v0, 4
+	
+	move $s3, $v0
+	
+	li $v0, 16
+	move $a0, $s0
 	syscall
-	subi $s5, $s5, 8
-	subi $t3, $t3, 1
-	bgt $t3, $0, loopYtest
+
+	mul $a3, $a3, 10
+	
+	# escrevendo a string
+	li $v0, 15
+	move $a0, $s3
+	move $a1, $s2
+	move $a2, $a3
+	syscall
 	
 	j end	
 	
