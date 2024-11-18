@@ -5,8 +5,8 @@
 .data
 ################## PARAMETROS DE LEITURA E ESCRITA
 	# caminhos dos arquivos
-	pathXTrain: .asciiz "data/xtrain.txt"
-	pathXTest: .asciiz "data/xtest.txt"
+	pathXTrain: .asciiz "data/Xtrain.txt"
+	pathXTest: .asciiz "data/Xtest.txt"
 	
 	# buffer
 	buffer: .space 10000
@@ -68,7 +68,7 @@ leituraXTrain:
 	j carregaParaMatrizXTrain
 	
 carregaParaMatrizXTrain:
-	descobreNumLinhasXtest:
+	descobreNumLinhasXTrain:
 		li $a1, 0 # determina modo leitura
 		li $v0, 13 # syscall para ler 
 		syscall
@@ -102,7 +102,6 @@ carregaParaMatrizXTrain:
 			syscall
 			
 			li $v0, 1
-			move $t5, $a0
 			move $a0, $a3
 			syscall
 			move $a0, $t5
@@ -241,7 +240,7 @@ carregaParaMatrizXTrain:
 			fimTransformacaoXTrain:
 				li $t3, 5
 				
-				move $t7, $a3 # coloca o parametro de numero de linhas no registrador utilizado na formacao de matrizes
+				move $t2, $a3 # coloca o parametro de numero de linhas no registrador utilizado na formacao de matrizes
 				move $a1, $s0 # marca o inicio do array de entrada no registrador utilizado na formacao de matrizes
 				j m1
 
@@ -350,7 +349,7 @@ leituraXTest:
 	j carregaParaMatrizXTest
 	
 carregaParaMatrizXTest:
-	descobreNumLinhasXtest:
+	descobreNumLinhasXTest:
 		li $a1, 0 # determina modo leitura
 		li $v0, 13 # syscall para ler 
 		syscall
