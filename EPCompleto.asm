@@ -862,7 +862,6 @@ loopXtrain:
 
 voltaPraString:
 	move $a3, $t3
-	move $s5, $s0 # ARRAY DOS NUMEROS
 	move $s3, $s5 # PONTEIRO QUE VOU USAR PRA ANDAR NO ARRAY DE NUMEROS
 	
 	move $a1, $t0 # volta a1 para o inicio do buffer
@@ -893,7 +892,7 @@ voltaPraString:
 arrumaNum:
 	lb $t0, ($s1)
 	
-	l.d $f6, ($s3) # BOTA EM F6 O PRIMEIRO NUMERO
+	l.d $f6, ($s5) # BOTA EM F6 O PRIMEIRO NUMERO
 	cvt.w.d $f0, $f6 # converte float para int
 	
 	mfc1 $a1, $f0 # guarda em um registrador
@@ -954,7 +953,7 @@ arrumaNum:
 	terminaNumero:
 		add $t2, $t2, 1 # contador de numeros
 		beq $t2, $a3, finalizaDoubleString
-		sub $s3, $s3, 8 # passa para o proximo double
+		subi $s5, $s5, 8 # passa para o proximo double
 		la $t1, '\n'
 		sb $t1, ($s1) # coloca o contrabarra do decimal no array de strings
 		move $a0, $t0
@@ -964,7 +963,7 @@ arrumaNum:
 		lb $t0, ($s1) # ando no array de strings
 		j arrumaNum
 		
-	finalizaDoubleString:
+	finalizaDoubleString:			
 		j escreverYTest
 
 ################################################# FUNCOES AUX YTEST #####################################################
@@ -1107,7 +1106,7 @@ adjustsp:
 										
 			
 end:
-	addi $v0, $v0, 10
+	li $v0, 10
 	syscall			
 					
 					
