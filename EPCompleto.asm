@@ -61,7 +61,7 @@
 
 ################################################### LEITURA DO XTRAIN1 ####################################################
 leituraXTrain:
-		# Carregar xtest
+	# Carregar xtest
 	la $a0, pathXTrain # descobre qual arquivo abrir
 	la $t6, buffer  # carrega o tamanho do buffer onde guardar o conteudo
 	li $a3, 0 # carrega 0 no registrador a3
@@ -102,6 +102,7 @@ carregaParaMatrizXTrain:
 			syscall
 			
 			li $v0, 1
+			move $t2, $a3
 			move $a0, $a3
 			syscall
 			move $a0, $t5
@@ -240,19 +241,18 @@ carregaParaMatrizXTrain:
 			fimTransformacaoXTrain:
 				li $t3, 5
 				
-				move $t2, $a3 # coloca o parametro de numero de linhas no registrador utilizado na formacao de matrizes
-				move $a1, $s0 # marca o inicio do array de entrada no registrador utilizado na formacao de matrizes
+				# NUMERO DE LINHAS NO $a3
+				# INICIO DO ARRAY DE ENTRADA NO $s0
 				j m1
-
-
 ######################################################### XTRAIN1 #########################################################
-m1:
-la  $a3, zerof
-      
+m1:      
+move $t2, $a3 
 lw $a2, w        # parametro w     
 lw $t3, h
-la $a1, xtrain    #inicio do array de entrada
+move $a1, $s0    #inicio do array de entrada
 la $t8, xtrain1
+
+la  $a3, zerof
 
 inicializacao: 
 
@@ -289,7 +289,7 @@ sub $t6, $t6, $t6  #zera o contador 2
 
 
 criacao:
-beq $s1, $t4, leituraXTest  # se temos que para de andar para o array: fim 
+beq $s1, $t4, leituraXTest  # se temos que para de andar para o array: fi  
 beq $t6, $a2, atualizacao # se ja pegamos todos os elementos da linha da matriz: atualizamos
 
 sll $s4, $t7, 3
@@ -322,8 +322,8 @@ impressao_loop:
     addi $t8, $t8, 8         # Avança para o próximo valor do array (saída)
 
     # Condição de parada: se terminou de imprimir todos os elementos
-    # mul $t3, $t4, $a2
-    # li $t3, $t4                # Recarrega o tamanho do array de entrada
+    #mul $t3, $t4, $a2
+    #li $t3, $t4                # Recarrega o tamanho do array de entrada
     beq $t1, $t3, m2
 
     # Para impressão, podemos colocar uma quebra de linha entre os valores
@@ -338,18 +338,19 @@ fim_impressao:
 
 
 
+
 ################################################### LEITURA DO XTEST1 ####################################################
 
 leituraXTest:
 
-	# Carregar xtest
+		# Carregar xtest
 	la $a0, pathXTest # descobre qual arquivo abrir
 	la $t6, buffer  # carrega o tamanho do buffer onde guardar o conteudo
 	li $a3, 0 # carrega 0 no registrador a3
 	j carregaParaMatrizXTest
 	
 carregaParaMatrizXTest:
-	descobreNumLinhasXTest:
+	descobreNumLinhasXtest:
 		li $a1, 0 # determina modo leitura
 		li $v0, 13 # syscall para ler 
 		syscall
@@ -384,6 +385,7 @@ carregaParaMatrizXTest:
 			
 			li $v0, 1
 			move $t5, $a0
+			move $t2, $a3
 			move $a0, $a3
 			syscall
 			move $a0, $t5
@@ -413,7 +415,7 @@ carregaParaMatrizXTest:
 		move $s1, $s0 # PONTEIRO QUE VOU USAR PARA ANDAR NO ARRAY
 		move $a0, $t5 # recolocando o valor de $a0
 		
-		li $t3, 1 # estou usando 1 para primeiro inteiro, 2 para outros inteiros, 3 pra primeiro decimal, 4 para outros decimais, 5 para o ultimo numero do array
+		li $s6, 1 # estou usando 1 para primeiro inteiro, 2 para outros inteiros, 3 pra primeiro decimal, 4 para outros decimais, 5 para o ultimo numero do array
 		
 		l.d $f6, fp1
 		l.d $f8, fp2
@@ -433,33 +435,33 @@ carregaParaMatrizXTest:
 			beq $t1, $zero, fimTransformacaoXTest # checa se chegou no fim do arquivo
 			beq $t1, 3, fimTransformacaoXTest # checa se chegou no fim do arquivo
 			beq $t1, 46, marcaDecimalXTest # checa se chegou no "."
-			beq $t3, 1, inteiroXTest # t3 marca que tipo de numero adicionar
-			beq $t3, 2, inteiroLoopXTest
-			beq $t3, 3, decimalXTest
-			beq $t3, 4, decimalLoopXTest
+			beq $s6, 1, inteiroXTest # s6 marca que tipo de numero adicionar
+			beq $s6, 2, inteiroLoopXTest
+			beq $s6, 3, decimalXTest
+			beq $s6, 4, decimalLoopXTest
 			blt $t1, 48, pulaCharXTest
 			bgt $t1, 58, pulaCharXTest
 			
 			pulaCharXTest:
 				l.d $f2, zerof # uso pra armazenar inteiro
 				l.d $f4, zerof # uso pra armazenar decimal
-				li $t3, 1 # avisa que o proximo e inicio de um inteiro
+				li $s6, 1 # avisa que o proximo e inicio de um inteiro
 				add $t0, $t0, 1
 				
 				j loopTransformaCharXTest
 			
 			inteiroXTest:
-				bgt $t3, 1, inteiroLoopXTest # se nao for o primeiro inteiro para pro prox loop de inteiros
+				bgt $s6, 1, inteiroLoopXTest # se nao for o primeiro inteiro para pro prox loop de inteiros
 				sub $t1, $t1, '0' # NAO SEI SE VAI FUNCIONAR
 				mtc1 $t1, $f10 # bota o conteudo de $t1 em $f10 (que uso como registrador temporario)
 				cvt.d.w $f10, $f10 # deixa como double
 				mov.d $f2, $f10 # bota no registrador que estou usando para guardar um inteiro
 				add $t0, $t0, 1 # passa para o prox numero
-				li $t3, 2 # avisa que o proximo e pelo menos segundo de um inteiro
+				li $s6, 2 # avisa que o proximo e pelo menos segundo de um inteiro
 				j loopTransformaCharXTest
 			
 			inteiroLoopXTest:
-				bgt $t3, 2, decimalXTest # se nao for inteiro passa pro loop de decimal
+				bgt $s6, 2, decimalXTest # se nao for inteiro passa pro loop de decimal
 				sub $t1, $t1, 48 # NAO SEI SE VAI FUNCIONAR
 				mtc1 $t1, $f10 # bota o conteudo de $t1 em $f10 (que uso como registrador temporario)
 				cvt.d.w $f10, $f10 # deixa como double
@@ -469,19 +471,19 @@ carregaParaMatrizXTest:
 				j loopTransformaCharXTest
 			
 			marcaDecimalXTest:
-				bgt $t3, 2, decimalXTest
-				li $t3, 3 # marca que o proximo e pelo menos o primeiro decimal
+				bgt $s6, 2, decimalXTest
+				li $s6, 3 # marca que o proximo e pelo menos o primeiro decimal
 				add $t0, $t0, 1 # passa para o prox numero
 				j loopTransformaCharXTest
 			
 			decimalXTest:
-				bgt $t3, 3, decimalLoopXTest
+				bgt $s6, 3, decimalLoopXTest
 				sub $t1, $t1, 48 # NAO SEI SE VAI FUNCIONAR
 				mtc1 $t1, $f10 # bota o conteudo de $t1 em $f10 (que uso como registrador temporario)
 				cvt.d.w $f10, $f10 # deixa como double
 				mov.d $f4, $f10 # bota no registrador que estou usando para guardar um decimal
 				add $t0, $t0, 1 # passa para o prox numero
-				li $t3, 4
+				li $s6, 4
 				j loopTransformaCharXTest
 				
 			decimalLoopXTest:
@@ -507,7 +509,7 @@ carregaParaMatrizXTest:
 				# depois de guardar o numero
 				l.d $f2, zerof # uso pra armazenar inteiro
 				l.d $f4, zerof # uso pra armazenar decimal
-				li $t3, 1 # avisa que o proximo e inicio de um inteiro
+				li $s6, 1 # avisa que o proximo e inicio de um inteiro
 				add $t0, $t0, 1
 				add $s1, $s1, 8
 				
@@ -520,11 +522,12 @@ carregaParaMatrizXTest:
 				bc1t 0, proxNumeroXTest
 			
 			fimTransformacaoXTest:
-				li $t3, 5
+				li $s6, 5
 				
-				move $t2, $a3 # coloca o parametro de numero de linhas no registrador utilizado na formacao de matrizes
-				move $a1, $s0 # marca o inicio do array de entrada no registrador utilizado na formacao de matrizes
-				j m2
+				# NUMERO DE LINHAS NO $a3
+				# INICIO DO ARRAY NO $s0
+				
+				jal m2
 
 ###################################################### XTEST1 ########################################
 
@@ -536,14 +539,14 @@ m2:
     li $a0, 10               # Código ASCII de '\n' (nova linha)
     syscall                  # Imprime a quebra de linha
     
-    
-la  $a3, zerof
-      
-lw $t2, ntest
+
+move $t2, $a3 # numero de linhas
 lw $a2, w        # parametro w     
+la  $a3, zerof
 lw $a3, h
-la $a1, xtest    #inicio do array de entrada
+move $a1, $s0    #inicio do array de entrada
 la $t9, xtest1
+
 
 inicializacao1: 
 
@@ -580,7 +583,7 @@ sub $t1, $t1, $t1  #zera o contador 2
 
 
 criacao1:
-beq $s1, $t4, arrayy  # se temos que para de andar para o array: fi  
+beq $s1, $t4, arrayy  # se temos que para de andar para o array: fi 
 beq $t1, $a2, atualizacao1 # se ja pegamos todos os elementos da linha da matriz: atualizamos
 
 sll $s4, $t7, 3 
@@ -627,7 +630,6 @@ impressao_loop1:
 fim_impressao1:
     li $v0, 10               # Código da syscall para terminar o programa
     syscall                  # Finaliza o programa
-
 
 ################################################## YTEST OBRIGADA DEUS  ##############################################
 arrayy:
@@ -750,7 +752,7 @@ main:
 	jal adjustsp
 	div $t4, $t1, $k1
 	mul $t4, $t4, 16	# o tamanho do array a ser alocado precisa ser do tamanho xtrain/m * 16, seria 12 mas é preciso ser divisivel por 8
-	add $s4, $s0, $sp	# $s4 será o array intermediário, de tamanho $t4
+	add $s4, $0, $sp	# $s4 será o array intermediário, de tamanho $t4
 	sub $sp, $sp, $t4
 	div $t4, $t4, 16
 	
@@ -856,6 +858,7 @@ loopXtrain:
 	syscall
 	
 loopYtest:
+
 	l.d $f12, ($s5)
 	addi $v0, $0, 3
 	syscall

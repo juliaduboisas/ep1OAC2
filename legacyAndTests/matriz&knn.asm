@@ -353,7 +353,7 @@ main:
 	jal adjustsp
 	div $t4, $t1, $k1
 	mul $t4, $t4, 16	# o tamanho do array a ser alocado precisa ser do tamanho xtrain/m * 16, seria 12 mas é preciso ser divisivel por 8
-	add $s4, $s0, $sp	# $s4 será o array intermediário, de tamanho $t4
+	add $s4, $0, $sp	# $s4 será o array intermediário, de tamanho $t4
 	sub $sp, $sp, $t4
 	div $t4, $t4, 16
 	

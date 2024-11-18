@@ -2,7 +2,7 @@
 
 .data
 	# Caminhos dos arquivos
-	pathXTrain: .asciiz "data/bb.txt"
+	pathXTrain: .asciiz "legacyAndTests/bb.txt"
 	
 	# Buffer
 	buffer: .space 10000
