@@ -1,6 +1,7 @@
 Para executar:
 
 Rode o Mars do repositório
+
 Rode o arquivo EPCompleto.asm
 
 Se quiser alterar Xtest e Xtrain, sobrescreva os arquivos em '/data'
